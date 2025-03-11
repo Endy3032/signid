@@ -1,4 +1,5 @@
 .DS_Store
-dataset/**/*.mp4
 __pycache__
-dataset.csv
+
+Model/dataset/**/*.mp4
+Model/dataset.csv

@@ -1,9 +1,16 @@
 {
+	"deno.enable": true,
+	"editor.formatOnSave": true,
 	"editor.formatOnPaste": true,
 	"editor.detectIndentation": false,
-	"notebook.defaultFormatter": "charliermarsh.ruff",
-	"notebook.formatOnSave.enabled": true,
-	"python.terminal.activateEnvironment": false,
-	"python.analysis.autoImportCompletions": true,
+	"editor.defaultFormatter": "dprint.dprint",
 	"terminal.integrated.defaultProfile.windows": "PowerShell",
+
+	"notebook.formatOnSave.enabled": true,
+	"notebook.defaultFormatter": "charliermarsh.ruff",
+	"[python]": {
+		"editor.defaultFormatter": "charliermarsh.ruff"
+	},
+	"python.terminal.activateEnvironment": false,
+	"python.analysis.autoImportCompletions": true
 }

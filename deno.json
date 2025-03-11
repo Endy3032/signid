@@ -1,0 +1,15 @@
+{
+	"lint": {
+		"rules": {
+			"tags": ["recommended"]
+		}
+	},
+	"imports": {
+	},
+	"compilerOptions": {
+		"lib": [
+			"dom",
+			"deno.ns"
+		]
+	}
+}
