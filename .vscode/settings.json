@@ -1,5 +1,9 @@
 {
 	"deno.enable": true,
+	"deno.lint": true,
+  "css.customData": [
+    ".vscode/tailwind.json"
+  ],
 	"editor.formatOnSave": true,
 	"editor.formatOnPaste": true,
 	"editor.detectIndentation": false,
@@ -12,5 +16,5 @@
 		"editor.defaultFormatter": "charliermarsh.ruff"
 	},
 	"python.terminal.activateEnvironment": false,
-	"python.analysis.autoImportCompletions": true
+	"python.analysis.autoImportCompletions": true,
 }
