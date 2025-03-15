@@ -25,7 +25,7 @@ export default function Predictor() {
 	const predictWebcam = async () => {
 		const cam = camRef.current
 		const draw = drawRef.current
-		if (!cam || !draw || !handLandmarker || cam.width === 0 || cam.height === 0) return
+		if (!cam || !draw || !handLandmarker || cam.width === 0 || cam.height === 0) return requestAnimationFrame(predictWebcam)
 
 		const ctx = draw.getContext("2d")
 		if (!ctx) return
