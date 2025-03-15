@@ -8,10 +8,10 @@ export default function Predictor() {
 	const drawRef = useRef<HTMLCanvasElement | null>(null)
 	const workerRef = useRef<Worker | null>(null)
 	const ready = useSignal(false)
-	const prediction = useSignal<string | null>(null) // Signal for displaying ASL prediction
+	const prediction = useSignal<string | null>(null)
 	let lastVideoTime = -1
 	let lastPredictionTime = 0
-	const throttleMs = 600 // Predict every 100ms
+	const throttleMs = 600
 
 	const drawLandmarks = (drawingUtils: DrawingUtils, results: HandLandmarkerResult) => {
 		if (!results.landmarks) return
@@ -25,10 +25,26 @@ export default function Predictor() {
 	const predictWebcam = async () => {
 		const cam = camRef.current
 		const draw = drawRef.current
-		if (!cam || !draw || !handLandmarker || cam.width === 0 || cam.height === 0) return requestAnimationFrame(predictWebcam)
+		if (!cam || !draw || !handLandmarker) {
+			requestAnimationFrame(predictWebcam)
+			return
+		}
+
+		if (cam.videoWidth === 0 || cam.videoHeight === 0) {
+			requestAnimationFrame(predictWebcam)
+			return
+		}
+
+		if (draw.width !== cam.videoWidth || draw.height !== cam.videoHeight) {
+			draw.width = cam.videoWidth
+			draw.height = cam.videoHeight
+		}
 
 		const ctx = draw.getContext("2d")
-		if (!ctx) return
+		if (!ctx) {
+			requestAnimationFrame(predictWebcam)
+			return
+		}
 
 		const startTimeMs = performance.now()
 		if (lastVideoTime !== cam.currentTime) {
@@ -39,7 +55,6 @@ export default function Predictor() {
 			const drawer = new DrawingUtils(ctx)
 			drawLandmarks(drawer, results)
 
-			// Throttle and send landmarks to worker for ASL prediction
 			if (
 				performance.now() - lastPredictionTime > throttleMs
 				&& workerRef.current
@@ -102,17 +117,15 @@ export default function Predictor() {
 	}, [])
 
 	useEffect(() => {
-		// Initialize Web Worker
 		workerRef.current = new Worker(new URL("/predictionWorker.js", import.meta.url), { type: "module" })
 
-		// Handle messages from worker (e.g., ASL predictions or errors)
 		workerRef.current.onmessage = event => {
 			const { prediction: pred, error } = event.data
 			if (error) {
 				console.error("Worker error:", error)
 				prediction.value = "Error during prediction"
 			} else if (pred !== undefined) {
-				prediction.value = `ASL Prediction: ${pred}` // Update UI with prediction
+				prediction.value = `ASL Prediction: ${pred}`
 			}
 		}
 
