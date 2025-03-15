@@ -1,11 +1,18 @@
 import * as ort from "/ort.min.mjs"
 
 let onnxSession = null
+let loading = false
 
 self.onmessage = async event => {
+	if (loading) {
+		self.postMessage({ error: "Model is still loading" })
+		return
+	}
 	const { landmarks } = event.data
 
 	if (!onnxSession) {
+		loading = true;
+
 		ort.env.wasm.numThreads = 1
 		ort.env.wasm.wasmPaths = {
 			wasm: "/ort-wasm-simd-threaded.wasm",
@@ -15,6 +22,7 @@ self.onmessage = async event => {
 		try {
 			onnxSession = await ort.InferenceSession.create("/model.onnx", { executionProviders: ["wasm"] })
 			console.log("ONNX model loaded in worker")
+			loading = false
 		} catch (error) {
 			self.postMessage({ error: error })
 			return
