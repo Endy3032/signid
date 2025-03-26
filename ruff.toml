@@ -1,0 +1,6 @@
+line-length = 135
+
+[format]
+indent-style = "tab"
+line-ending = "lf"
+quote-style = "double"
