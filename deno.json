@@ -20,6 +20,8 @@
 	"imports": {
 		"$fresh/": "https://deno.land/x/fresh@1.7.3/",
 		"@mediapipe/tasks-vision": "npm:@mediapipe/tasks-vision@^0.10.22-rc.20250304",
+		"@std/csv": "jsr:@std/csv@^1.0.5",
+		"@std/path": "jsr:@std/path@^1.0.8",
 		"onnxruntime-web": "npm:onnxruntime-web@^1.21.0",
 		"preact": "https://esm.sh/preact@10.22.0",
 		"preact/": "https://esm.sh/preact@10.22.0/",

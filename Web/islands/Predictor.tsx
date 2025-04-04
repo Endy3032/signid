@@ -1,17 +1,23 @@
 import { DrawingUtils, FilesetResolver, HandLandmarker, HandLandmarkerResult } from "@mediapipe/tasks-vision"
 import { useSignal } from "@preact/signals"
 import { useEffect, useRef } from "preact/hooks"
+import { KDTree } from "../utils/KDTree.ts"
 
 export default function Predictor() {
-	let handLandmarker: HandLandmarker | null = null
+	const ready = useSignal(false)
 	const camRef = useRef<HTMLVideoElement | null>(null)
 	const drawRef = useRef<HTMLCanvasElement | null>(null)
-	const workerRef = useRef<Worker | null>(null)
-	const ready = useSignal(false)
+	const predictor = useSignal<KDTree | null>(null)
 	const prediction = useSignal<string | null>(null)
+	let handLandmarker: HandLandmarker | null = null
 	let lastVideoTime = -1
-	let lastPredictionTime = 0
-	const throttleMs = 600
+
+	const predict = (landmarks: number[]) => {
+		if (!predictor.value) return null
+		const f32 = new Float32Array(landmarks)
+		const predictions = predictor.value?.query(f32)
+		return predictions
+	}
 
 	const drawLandmarks = (drawingUtils: DrawingUtils, results: HandLandmarkerResult) => {
 		if (!results.landmarks) return
@@ -55,18 +61,18 @@ export default function Predictor() {
 			const drawer = new DrawingUtils(ctx)
 			drawLandmarks(drawer, results)
 
-			if (
-				performance.now() - lastPredictionTime > throttleMs
-				&& workerRef.current
-				&& results.landmarks.length > 0
-			) {
-				lastPredictionTime = performance.now()
-				const dataToSend = results.landmarks.map((landmarks, i) => ({
-					landmarks: results.worldLandmarks[i],
-					handedness: results.handedness[i][0].index,
-				}))
-				workerRef.current.postMessage({ landmarks: dataToSend })
+			if (results.landmarks.length === 0) {
+				prediction.value = "No hands detected"
+				requestAnimationFrame(predictWebcam)
+				return
 			}
+
+			const data = [...results.worldLandmarks[0]?.reduce((acc, cur) => {
+				acc.push(cur.x, cur.y, cur.z)
+				return acc
+			}, [] as number[]), results.handedness[0]?.[0].index]
+
+			prediction.value = String.fromCharCode(predict(data) ?? 0)
 		}
 
 		requestAnimationFrame(predictWebcam)
@@ -82,22 +88,18 @@ export default function Predictor() {
 			}
 		}
 
-		startCamera()
-
-		return () => {
-			if (camRef.current?.srcObject) {
-				const stream = camRef.current.srcObject as MediaStream
-				stream.getTracks().forEach(track => track.stop())
-			}
+		const loadModel = async () => {
+			if (predictor.value) return
+			const response = await fetch("/model.bin")
+			if (!response.ok) throw new Error("Failed to load model")
+			const buffer = await response.arrayBuffer()
+			const tree = KDTree.deserialize(buffer)
+			predictor.value = tree
 		}
-	}, [])
 
-	useEffect(() => {
 		const createHandLandmarker = async () => {
 			try {
-				const vision = await FilesetResolver.forVisionTasks(
-					"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm",
-				)
+				const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm")
 				handLandmarker = await HandLandmarker.createFromOptions(vision, {
 					baseOptions: {
 						modelAssetPath:
@@ -105,7 +107,7 @@ export default function Predictor() {
 						delegate: "GPU",
 					},
 					runningMode: "VIDEO",
-					numHands: 2,
+					numHands: 1,
 				})
 				ready.value = true
 				requestAnimationFrame(predictWebcam)
@@ -113,24 +115,16 @@ export default function Predictor() {
 				console.error("Failed to initialize HandLandmarker:", error)
 			}
 		}
+
+		startCamera()
+		loadModel()
 		createHandLandmarker()
-	}, [])
-
-	useEffect(() => {
-		workerRef.current = new Worker(new URL("/predictionWorker.js", import.meta.url), { type: "module" })
-
-		workerRef.current.onmessage = event => {
-			const { prediction: pred, error } = event.data
-			if (error) {
-				console.error("Worker error:", error)
-				prediction.value = "Error during prediction"
-			} else if (pred !== undefined) {
-				prediction.value = `ASL Prediction: ${pred}`
-			}
-		}
 
 		return () => {
-			workerRef.current?.terminate()
+			if (camRef.current?.srcObject) {
+				const stream = camRef.current.srcObject as MediaStream
+				stream.getTracks().forEach(track => track.stop())
+			}
 		}
 	}, [])
 

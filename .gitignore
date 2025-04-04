@@ -2,7 +2,7 @@
 __pycache__
 
 Model/dataset/**/*.mp4
-Model/**/*.csv
+*.csv
 
 # dotenv environment variable files
 .env
