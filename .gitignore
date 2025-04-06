@@ -1,15 +1,12 @@
 .DS_Store
 __pycache__
 
-Model/dataset/**/*.mp4
-*.csv
+Model/preview/*.jpg
+*.mp4
+*.csv*
 
 # dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env*
 
 # Fresh build directory
 _fresh/
