@@ -1,3 +1,75 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+input[type="range"] {
+	-webkit-appearance: none;
+	appearance: none;
+	@apply bg-zinc-300 transition-all outline-none rounded-full h-2 w-full;
+
+	&:hover {
+		@apply bg-zinc-400
+	}
+
+	&::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		@apply bg-blue-500 w-5 h-5 rounded-full cursor-pointer shadow-md transition-all duration-200 ease-in-out;
+	}
+
+	&::-moz-range-thumb {
+		@apply bg-blue-500 w-5 h-5 rounded-full cursor-pointer shadow-md transition-all duration-200 ease-in-out;
+	}
+
+	&:hover::-webkit-slider-thumb {
+		@apply scale-125 bg-blue-400;
+	}
+
+	&:hover::-moz-range-thumb {
+		@apply scale-125 bg-blue-400;
+	}
+
+	&:focus::-webkit-slider-thumb {
+		@apply ring ring-blue-300;
+	}
+
+	&:focus::-moz-range-thumb {
+		@apply ring ring-blue-300;
+	}
+
+	&:active::-webkit-slider-thumb {
+		@apply scale-110 bg-blue-600;
+	}
+
+	&:active::-moz-range-thumb {
+		@apply scale-110 bg-blue-600;
+	}
+}
+
+.status {
+	@apply relative w-2.5 h-2.5 rounded-full transition-colors animate-pulse;
+	@apply before:content-[''] before:absolute before:top-0 before:left-0;
+	@apply before:w-2.5 before:h-2.5 before:rounded-full before:animate-ping;
+
+	&.inactive {
+		@apply bg-rose-500 before:bg-rose-500 animate-none;
+	}
+
+	&.active {
+		@apply bg-emerald-500 before:bg-emerald-500 before:animate-none;
+	}
+
+	&:not(.inactive):not(.active) {
+		@apply bg-zinc-500 before:bg-zinc-500;
+	}
+}
+
+@keyframes flash {
+	0% {
+		filter: brightness(1.2)
+	}
+
+	100% {
+		filter: brightness(1)
+	}
+}
