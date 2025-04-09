@@ -47,9 +47,9 @@ input[type="range"] {
 }
 
 .status {
-	@apply relative w-2.5 h-2.5 rounded-full transition-colors animate-pulse;
+	@apply relative w-2.5 h-2.5 rounded-full transition-all animate-pulse;
 	@apply before:content-[''] before:absolute before:top-0 before:left-0;
-	@apply before:w-2.5 before:h-2.5 before:rounded-full before:animate-ping;
+	@apply before:w-2.5 before:h-2.5 before:rounded-full before:animate-ping before:transition-all;
 
 	&.inactive {
 		@apply bg-rose-500 before:bg-rose-500 animate-none;
@@ -60,7 +60,7 @@ input[type="range"] {
 	}
 
 	&:not(.inactive):not(.active) {
-		@apply bg-zinc-500 before:bg-zinc-500;
+		@apply bg-zinc-500 before:bg-zinc-500 before:animate-none;
 	}
 }
 

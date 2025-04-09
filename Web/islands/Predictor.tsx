@@ -6,6 +6,7 @@ import { KDTree } from "../utils/KDTree.ts"
 export default function Predictor() {
 	const mpReady = useSignal(false)
 	const camReady = useSignal(false)
+	const modelReady = useSignal(false)
 	const aslReady = useSignal(true)
 
 	const camRef = useRef<HTMLVideoElement | null>(null)
@@ -124,17 +125,14 @@ export default function Predictor() {
 			const buffer = await response.arrayBuffer()
 			const tree = KDTree.deserialize(buffer)
 			predictor.value = tree
+			modelReady.value = true
 		}
 
 		const createHandLandmarker = async () => {
 			try {
-				const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm")
+				const vision = await FilesetResolver.forVisionTasks("")
 				handLandmarker = await HandLandmarker.createFromOptions(vision, {
-					baseOptions: {
-						modelAssetPath:
-							"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-						delegate: "GPU",
-					},
+					baseOptions: { modelAssetPath: "/hand_landmarker.task", delegate: "GPU" },
 					runningMode: "VIDEO",
 					numHands: 1,
 				})
@@ -159,7 +157,7 @@ export default function Predictor() {
 				</div>
 				<div className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1 mt-2 text-zinc-400 px-4">
-						<label class="ms-2 text-lg" htmlFor="speed">Độ trễ nhận diện: {throttleMs.value / 1000}s</label>
+						<label class="ms-2" htmlFor="speed">Độ trễ nhận diện: {throttleMs.value / 1000}s</label>
 						<div className="flex items-center gap-2 justify-between">
 							<span class="text-sm tabular-nums">0s</span>
 							<input
@@ -179,35 +177,22 @@ export default function Predictor() {
 							<span class="text-sm tabular-nums">2s</span>
 						</div>
 					</div>
-					<div className="grid grid-cols-2 lg:grid-cols-4 justify-between gap-2">
+					<div className="flex flex-wrap gap-x-4 gap-y-1 ps-2 items-center">
+						<div className="flex items-center gap-2">
+							<span class={`status ${camReady.value ? "active" : "inactive"}`}></span>Camera
+						</div>
+						<div className="flex items-center gap-2">
+							<span class={`status ${mpReady.value ? "active" : "inactive"}`}></span>Nhận diện
+						</div>
+						<div className="flex items-center gap-2">
+							<span class={`status ${modelReady.value ? "active" : "inactive"}`}></span>Model
+						</div>
+						<div className="flex items-center gap-2">
+							<span class={`status ${aslReady.value ? "active" : ""}`}></span>Dự đoán
+						</div>
 						<button
 							type="button"
-							class="rounded-md px-4 py-3 bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300"
-							onClick={() => sentence.value = sentence.value.replace(/#$/, "").slice(0, -1)}
-						>
-							Xóa chữ cuối
-						</button>
-						<button
-							type="button"
-							class="rounded-md px-4 py-3 bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300"
-							onClick={() => sentence.value = ""}
-						>
-							Xóa câu
-						</button>
-						<button
-							type="button"
-							class="rounded-md px-4 py-3 bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300"
-							onClick={() => {
-								if (sentence.value.replaceAll("#", "").trim().length === 0) return
-								history.value.push({ timestamp: new Date(), text: sentence.value.replaceAll("#", "") })
-								sentence.value = ""
-							}}
-						>
-							Lưu câu
-						</button>
-						<button
-							type="button"
-							class="rounded-md px-4 py-3 bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300"
+							class="rounded-md w-12 px-3 py-1 bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300"
 							onClick={() => {
 								aslReady.value = !aslReady.value
 								if (aslReady.value) {
@@ -216,47 +201,62 @@ export default function Predictor() {
 								}
 							}}
 						>
-							{aslReady.value ? "Tạm dừng" : "Tiếp tục"}
+							{aslReady.value ? "⏸" : "▶"}
 						</button>
-					</div>
-					<div className="flex gap-4 ps-2">
-						<div className="flex items-center gap-2">
-							<span class={`status ${camReady.value ? "active" : "inactive"}`}></span>Camera
-						</div>
-						<div className="flex items-center gap-2">
-							<span class={`status ${mpReady.value ? "active" : "inactive"}`}></span>Nhận diện tay
-						</div>
-						<div className="flex items-center gap-2">
-							<span class={`status ${aslReady.value ? "active" : "inactive"}`}></span>Dự đoán ASL
-						</div>
 					</div>
 				</div>
 			</div>
 			<div className="flex flex-1 flex-col bg-zinc-700 rounded-3xl gap-2 p-4">
-				<div className="sticky bottom-4 order-last items-end lg:items-start lg:order-first lg:top-4 flex gap-2">
-					<div key={prediction.value} className="flex rounded-xl justify-center items-center w-32 h-12 bg-zinc-600 animate-flash">
-						Dự đoán: {prediction.value || "ø"}
+				<div className="w-full fixed left-0 bottom-0 p-2 rounded-t-2xl items-end lg:sticky lg:items-start lg:top-4 lg:p-0 lg:rounded-none flex flex-col gap-2 backdrop-blur-md bg-zinc-700/50">
+					<div className="order-last lg:order-first flex gap-2">
+						<div key={prediction.value} className="flex rounded-xl justify-center items-center w-28 h-10 bg-zinc-600 animate-flash">
+							Dự đoán: {prediction.value || "ø"}
+						</div>
+						<button type="button"
+							class="rounded-xl bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300 px-3 h-10"
+							onClick={() => sentence.value = (sentence.value.replace(/[# ]$/, "") + " ").trimStart()}
+						>
+							␣
+						</button>
+						<button
+							type="button"
+							class="rounded-xl bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300 px-3 h-10"
+							onClick={() => sentence.value = sentence.value.replace(/#$/, "").slice(0, -1)}
+						>
+							⌫
+						</button>
+						<button
+							type="button"
+							class="rounded-xl bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300 px-3 h-10"
+							onClick={() => sentence.value = ""}
+						>
+							🗑️
+						</button>
+						<button
+							type="button"
+							class="rounded-xl bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300 px-3 h-10"
+							onClick={() => {
+								if (sentence.value.replaceAll("#", "").trim().length === 0) return
+								history.value.push({ timestamp: new Date(), text: sentence.value.replaceAll("#", "") })
+								sentence.value = ""
+							}}
+						>
+							💾
+						</button>
 					</div>
-					<button type="button"
-						class="rounded-xl h-12 bg-zinc-600 hover:bg-zinc-500 transition-all outline-none focus:ring focus:ring-zinc-300 px-4 py-3"
-						onClick={() => sentence.value = (sentence.value.replace(/[# ]$/, "") + " ").trimStart()}
+					<div className={"min-h-10 w-full flex-1 break-all max-w-full block h-auto rounded-xl bg-zinc-600 px-4 py-2 "
+						+ (sentence.value.replaceAll("#", "").length === 0 ? "text-zinc-300" : "")}
 					>
-						␣
-					</button>
-					<textarea
-						className={`min-h-12 flex-1 break-words max-w-full block h-auto rounded-xl bg-zinc-600 px-4 py-3 ${
-							sentence.value.length === 0 ? "text-zinc-300" : ""
-						}`}
-						value={sentence.value.replaceAll("#", "")}
-						placeholder="Aa"
-					>
-					</textarea>
+						{sentence.value.replaceAll("#", "") || "Aa"}
+					</div>
 				</div>
 				<div className="flex-1 flex flex-col gap-2 max-h-full overflow-scroll">
 					{history.value.map(item => (
-						<div key={item.timestamp.toString()} className="flex gap-2">
-							<span className="text-zinc-400 tabular-nums">{item.timestamp.toLocaleTimeString()}</span>
-							<span className="text-zinc-200">{item.text}</span>
+						<div key={item.timestamp.toString()} className="flex flex-col">
+							<span className="ms-2 text-sm text-zinc-400 tabular-nums">
+								{item.timestamp.toLocaleTimeString("default", { hour12: false })}
+							</span>
+							<div className="text-zinc-200 flex-1 w-full max-w-full overflow-x-hidden break-all whitespace-normal">{item.text}</div>
 						</div>
 					))}
 				</div>
