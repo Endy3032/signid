@@ -57,6 +57,7 @@ export default function Predictor() {
 
 			if (results.landmarks.length === 0) {
 				prediction.value = null
+				lastPredictionTime = performance.now() - throttleMs.value / 4 * 3
 				requestAnimationFrame(processWebcam)
 				return
 			}
@@ -145,6 +146,51 @@ export default function Predictor() {
 
 		loadModel()
 		createHandLandmarker()
+	}, [])
+
+	// create a keyboard handler for actions
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			switch (event.key) {
+				case "q": {
+					sentence.value = sentence.value.replace(/#$/, "").slice(0, -1)
+					break
+				}
+
+				case "w": {
+					sentence.value = sentence.value.replace(/#$/, "").slice(0, -1)
+					break
+				}
+
+				case "e": {
+					sentence.value = ""
+					break
+				}
+
+				case "r": {
+					if (sentence.value.replaceAll("#", "").trim().length === 0) return
+					history.value.push({ timestamp: new Date(), text: sentence.value.replaceAll("#", "") })
+					sentence.value = ""
+					break
+				}
+
+				case "space": {
+					aslReady.value = !aslReady.value
+					if (aslReady.value) {
+						prediction.value = null
+						lastPredictionTime = performance.now()
+					}
+					break
+				}
+			}
+		}
+
+		globalThis.addEventListener("keydown", handleKeyDown)
+
+		return () => {
+			globalThis.removeEventListener("keydown", handleKeyDown)
+		}
 	}, [])
 
 	return (
