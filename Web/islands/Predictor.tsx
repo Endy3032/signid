@@ -136,6 +136,9 @@ export default function Predictor() {
 					baseOptions: { modelAssetPath: "/hand_landmarker.task", delegate: "GPU" },
 					runningMode: "VIDEO",
 					numHands: 1,
+					minHandDetectionConfidence: 0.7,
+					minHandPresenceConfidence: 0.7,
+					minTrackingConfidence: 0.7,
 				})
 				mpReady.value = true
 				requestAnimationFrame(processWebcam)
